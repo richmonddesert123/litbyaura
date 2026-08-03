@@ -9,72 +9,116 @@ Status as of this handoff: **fully working, smoke-tested end to end**
 screenshot pass). Not yet deployed anywhere; runs on `localhost:3000`.
 
 ### Most recent round
-- **Drop-in logo slot.** The text-based "LitByAura" wordmark (`Lit<span>ByAura</span>`)
-  is replaced everywhere with `<img src="/images/logo.png" class="logo-img">`
-  — 13 main-site pages plus the admin sidebar mini-logo, all pointing at the
-  same single file. `public/images/logo.png` currently holds a generated
-  placeholder that visually matches the old text logo, so nothing looks
-  broken until the real logo is dropped in. **To use a real logo: just
-  overwrite `public/images/logo.png` with the same filename** — no HTML/CSS
-  changes needed. Sizing is handled by one CSS rule, `.logo-img { height:
-  0.8em; width: auto; }`, which resolves relative to whatever font-size the
-  `<img>` inherits from its container — that's why one rule correctly
-  produces a ~38px logo in the main 3rem header, ~24px on the 1.9rem mobile
-  header, and ~15px in the 1.2rem admin sidebar without any per-context
-  overrides. If a differently-shaped logo (e.g. very tall/square vs. wide)
-  looks off at some size, adjust that single `em` multiplier rather than
-  adding new rules per page. Verified via Playwright: image actually loads
-  (not a broken `<img>`), correct proportional size at desktop/mobile/admin,
-  and mobile still has zero horizontal overflow with it in place.
 
-### Most recent round
-- **Hero slideshow moved to the database + admin panel, uncapped.** Was
-  hardcoded to exactly 4 files (`hero-slide-1..4.jpg`) referenced directly in
-  `index.html`. Now backed by a `hero_slides` table (seeded from those same
-  4 files so upgrading doesn't start empty) with a public `GET
-  /api/hero-slides` and full admin CRUD + reorder at `/api/admin/hero-slides`
-  (same pattern as `announcements` below). New **"Hero Slides" admin tab**:
-  paste an image URL + optional caption, inline-edit either field, ↑/↓
-  reorder, Hide/Show toggle (soft, doesn't delete), delete. `index.html`'s
-  slideshow JS now builds slide `<div>`s from the fetched list instead of
-  expecting hardcoded markup - verified end-to-end (add/reorder/hide/delete
-  all correctly reflected on the public endpoint).
-- **Removed the duplicate "LitByAura" wordmark from the homepage footer** —
-  it repeated the header logo directly above the copyright line. Confirmed
-  via grep that no other page had this pattern (they only ever had the
-  plain copyright line), so this was homepage-only.
-- **Mobile responsiveness pass.** Audited every page at a 375px viewport
-  with Playwright (checking `document.documentElement.scrollWidth` vs
-  `clientWidth` for horizontal overflow) and fixed what it found:
-  - Header now wraps into two rows on narrow screens (logo + account/cart
-    icons on row one, nav links centered on row two) instead of squeezing
-    everything into one line — see the `@media (max-width: 640px)` block
-    right after `.site-header`.
-  - Admin dashboard sidebar (`.admin-shell`) collapses from the fixed
-    220px-sidebar grid into a horizontally-scrollable top bar below 860px —
-    otherwise it was unusable on a phone.
-  - Admin tables (`.admin-card .admin-table`) get `min-width: 560px` inside
-    an `overflow-x: auto` wrapper instead of squashing columns illegibly.
-  - Nav dropdowns (`.shop-nav-dropdown`) are now centered under their toggle
-    (`left: 50%; transform: translateX(-50%)`) with `max-width: calc(100vw -
-    32px)` instead of anchoring left, which could push them off the right
-    edge of a narrow screen.
-  - **Root cause found and fixed**: the cart-count badge (the small "0"
-    circle on the cart icon) was spilling ~12px past the viewport edge on
-    every page at mobile width — its `right: -12px` offset assumed more
-    breathing room than the mobile header actually had. Gave `.header-actions`
-    a small `margin-right` on mobile so there's room for it.
-  - Also added `overflow-x: hidden` on `html`/`body` as a defensive
-    safety net (standard practice) so any *future* stray element can't
-    reintroduce a horizontal scrollbar site-wide the same way. Don't rely on
-    this alone though — the audit script above is the real check; rerun it
-    (`/tmp` scripts aren't saved, but the pattern is: Playwright at 375px
-    viewport, compare `scrollWidth` to `clientWidth` on every page) after
-    any layout change.
-  - Re-verified desktop (1280px) afterward — logo still 48px/3rem, hero
-    slideshow still renders, nothing regressed.
+- **SEO: sitemap, robots.txt, and meta tags.** `GET /sitemap.xml` and `GET
+  /robots.txt` are now live routes (`server/routes/sitemap.js`) generated
+  fresh from the DB on every request — not static files — so the sitemap
+  always reflects current active products/concerns/skin-types/brands with no
+  manual regeneration step. Verified: valid XML (parsed with Python's
+  ElementTree), correct `lastmod` per product, ampersands properly escaped
+  in query-string URLs (e.g. `?view=concern&amp;slug=...`).
+  **`product.html` is now server-rendered for its `<head>`**, not just a
+  static file — `server/render-product-meta.js` reads the requested
+  `?slug=`, looks up the real product, and injects title/description/
+  `og:image`/price into `{{META_*}}` placeholder tokens in the HTML before
+  sending it. This matters because link-preview bots (WhatsApp, Facebook,
+  Twitter/X, Slack, iMessage) generally don't execute JavaScript when
+  building a share-card preview — they only read the initial HTML response.
+  Without this, every shared product link would show a generic "LitByAura"
+  card instead of that product's actual photo/name/price. **This route MUST
+  stay registered in `server/index.js` before `app.use(express.static(...))`**
+  — if `express.static` runs first, it'll serve the raw file with unreplaced
+  `{{...}}` tokens and this route never fires. Falls back to generic
+  meta/placeholder image if the slug is missing or the product isn't
+  found/inactive. Verified: real product data injected for a valid slug,
+  clean generic fallback for a missing one, zero leftover `{{}}` tokens
+  either way, and the page still fully functions in-browser afterward
+  (gallery, add-to-cart, etc. all still worked in a Playwright check).
+  Also added: `noindex, nofollow` on cart/checkout/account/confirmation/
+  reset-password/admin (none of these should show up in search results),
+  meta descriptions + OG/Twitter tags on the homepage and `shop.html` (the
+  latter updates its description/OG tags per-view via JS, e.g. a "Shop by
+  Concern → Acne & Breakouts" page gets its own description), and meta
+  descriptions on all five static policy/contact pages.
 
-### Recent fixes (earlier round)
+### Earlier rounds (most recent first)
+
+**Logo image slot.** The text-based "LitByAura" wordmark (`Lit<span>ByAura</span>`)
+is replaced everywhere with `<img src="/images/logo.png" class="logo-img">`
+— 13 main-site pages plus the admin sidebar mini-logo, all pointing at the
+same single file. `public/images/logo.png` currently holds a generated
+placeholder that visually matches the old text logo, so nothing looks
+broken until the real logo is dropped in. **To use a real logo: just
+overwrite `public/images/logo.png` with the same filename** — no HTML/CSS
+changes needed. Sizing is handled by one CSS rule, `.logo-img { height:
+0.8em; width: auto; }`, which resolves relative to whatever font-size the
+`<img>` inherits from its container — that's why one rule correctly
+produces a ~38px logo in the main 3rem header, ~24px on the 1.9rem mobile
+header, and ~15px in the 1.2rem admin sidebar without any per-context
+overrides. If a differently-shaped logo (e.g. very tall/square vs. wide)
+looks off at some size, adjust that single `em` multiplier rather than
+adding new rules per page. Verified via Playwright: image actually loads
+(not a broken `<img>`), correct proportional size at desktop/mobile/admin,
+and mobile still has zero horizontal overflow with it in place.
+
+**How this interacts with the `.logo` font-size** (currently `7rem`, see
+Design System section below): `.logo-img` is sized in `em` units (`height:
+0.8em`), which resolve relative to the font-size of its container — so
+bumping `.logo`'s font-size doesn't just resize invisible text, it also
+scales the actual logo image proportionally. Confirmed no conflict: at
+`7rem`, the logo image renders at ~90px tall on desktop; the mobile
+override still caps `.logo` at `1.9rem` so the image stays a sane ~30px
+there instead of blowing out the mobile header.
+
+**Hero slideshow moved to the database + admin panel, uncapped.** Was
+hardcoded to exactly 4 files (`hero-slide-1..4.jpg`) referenced directly in
+`index.html`. Now backed by a `hero_slides` table (seeded from those same
+4 files so upgrading doesn't start empty) with a public `GET
+/api/hero-slides` and full admin CRUD + reorder at `/api/admin/hero-slides`
+(same pattern as `announcements` below). New **"Hero Slides" admin tab**:
+paste an image URL + optional caption, inline-edit either field, ↑/↓
+reorder, Hide/Show toggle (soft, doesn't delete), delete. `index.html`'s
+slideshow JS now builds slide `<div>`s from the fetched list instead of
+expecting hardcoded markup - verified end-to-end (add/reorder/hide/delete
+all correctly reflected on the public endpoint).
+
+**Removed the duplicate "LitByAura" wordmark from the homepage footer** —
+it repeated the header logo directly above the copyright line. Confirmed
+via grep that no other page had this pattern (they only ever had the
+plain copyright line), so this was homepage-only.
+
+**Mobile responsiveness pass.** Audited every page at a 375px viewport
+with Playwright (checking `document.documentElement.scrollWidth` vs
+`clientWidth` for horizontal overflow) and fixed what it found:
+- Header now wraps into two rows on narrow screens (logo + account/cart
+  icons on row one, nav links centered on row two) instead of squeezing
+  everything into one line — see the `@media (max-width: 640px)` block
+  right after `.site-header`.
+- Admin dashboard sidebar (`.admin-shell`) collapses from the fixed
+  220px-sidebar grid into a horizontally-scrollable top bar below 860px —
+  otherwise it was unusable on a phone.
+- Admin tables (`.admin-card .admin-table`) get `min-width: 560px` inside
+  an `overflow-x: auto` wrapper instead of squashing columns illegibly.
+- Nav dropdowns (`.shop-nav-dropdown`) are now centered under their toggle
+  (`left: 50%; transform: translateX(-50%)`) with `max-width: calc(100vw -
+  32px)` instead of anchoring left, which could push them off the right
+  edge of a narrow screen.
+- **Root cause found and fixed**: the cart-count badge (the small "0"
+  circle on the cart icon) was spilling ~12px past the viewport edge on
+  every page at mobile width — its `right: -12px` offset assumed more
+  breathing room than the mobile header actually had. Gave `.header-actions`
+  a small `margin-right` on mobile so there's room for it.
+- Also added `overflow-x: hidden` on `html`/`body` as a defensive
+  safety net (standard practice) so any *future* stray element can't
+  reintroduce a horizontal scrollbar site-wide the same way. Don't rely on
+  this alone though — the audit script above is the real check; rerun it
+  (`/tmp` scripts aren't saved, but the pattern is: Playwright at 375px
+  viewport, compare `scrollWidth` to `clientWidth` on every page) after
+  any layout change.
+- Re-verified desktop (1280px) afterward — logo still 48px/3rem, hero
+  slideshow still renders, nothing regressed.
+
+### Recent fixes (earlier rounds)
 - **Schema migration bug, now fixed**: a user hit `SqliteError: table orders
   has no column named customer_id` — they had a `litbyaura.db` created
   before customer accounts/order emails were added, and `CREATE TABLE IF NOT
@@ -239,6 +283,17 @@ server/
                    provider.handleWebhook(req) before trusting anything;
                    on 'failed' calls restoreStockIfNeeded (idempotent, guarded
                    by orders.stock_restored flag).
+    sitemap.js     GET /sitemap.xml and GET /robots.txt - both generated
+                   fresh from the DB on every request (not static files),
+                   so they always reflect current active products/taxonomy.
+  render-product-meta.js  NOT in routes/ - imported directly by index.js and
+                   registered as app.get('/product.html', ...) BEFORE
+                   express.static (order matters, see comment in index.js).
+                   Reads ?slug=, looks up the real product, injects title/
+                   description/og:image/price into {{META_*}} tokens in
+                   product.html before sending - so link-preview bots that
+                   don't run JS (WhatsApp, Facebook, Slack, etc.) see the
+                   real product instead of a generic card.
 public/
   index.html            Homepage: hero, shop-nav dropdown, curated preview
                          grid (best sellers if any exist, else newest 8),
@@ -371,6 +426,10 @@ Public:
   GET    /api/brands                      distinct brand strings in use by active products
   GET    /api/announcements                active trust-bar messages, ordered
   GET    /api/hero-slides                  active homepage slideshow images, ordered
+  GET    /sitemap.xml                       generated fresh from DB, not a static file
+  GET    /robots.txt                        also generated fresh (uses config.baseUrl)
+  GET    /product.html                      NOT a static file - server-rendered, see
+                                            render-product-meta.js above
   GET    /api/payment-methods              enabled providers only (COD always included)
   POST   /api/orders                       optionalCustomer — links customer_id if logged in
   GET    /api/orders/:orderNumber

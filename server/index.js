@@ -8,6 +8,8 @@ const { router: orderRoutes } = require('./routes/orders');
 const adminRoutes = require('./routes/admin');
 const customerRoutes = require('./routes/customers');
 const webhookRoutes = require('./routes/webhooks');
+const sitemapRoutes = require('./routes/sitemap');
+const { renderProductPage } = require('./render-product-meta');
 
 const app = express();
 
@@ -27,6 +29,11 @@ app.use(
   })
 );
 
+// Registered BEFORE express.static so this intercepts /product.html and
+// injects real meta tags - if this were after static, the raw file (with
+// unreplaced {{...}} tokens) would already be served and this would never run.
+app.get('/product.html', renderProductPage);
+
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
 app.use(productRoutes);
@@ -34,6 +41,7 @@ app.use(orderRoutes);
 app.use(adminRoutes);
 app.use(customerRoutes);
 app.use(webhookRoutes);
+app.use(sitemapRoutes);
 
 // Client-side routes that just need to serve the SPA-ish pages
 app.get('/order/:orderNumber/confirm', (req, res) => {

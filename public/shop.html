@@ -4,6 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Shop — LitByAura</title>
+<meta name="description" content="Browse the full LitByAura skincare range — all products, new arrivals, best sellers, or shop by concern, skin type, and brand.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Shop — LitByAura">
+<meta property="og:description" content="Browse the full LitByAura skincare range — all products, new arrivals, best sellers, or shop by concern, skin type, and brand.">
+<meta property="og:site_name" content="LitByAura">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Shop — LitByAura">
+<meta name="twitter:description" content="Browse the full LitByAura skincare range — all products, new arrivals, best sellers, or shop by concern, skin type, and brand.">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="alternate icon" href="/favicon.ico">
 <link rel="apple-touch-icon" href="/images/apple-touch-icon.png">
@@ -174,6 +182,10 @@ async function init() {
   document.getElementById('shop-eyebrow').textContent = eyebrow;
   document.getElementById('shop-title').textContent = title;
   document.title = `${title} — LitByAura`;
+  const dynamicDescription = `Shop ${title} at LitByAura — quality skincare delivered across Ghana, pay cash on delivery.`;
+  document.querySelector('meta[name="description"]').setAttribute('content', dynamicDescription);
+  document.querySelector('meta[property="og:title"]').setAttribute('content', `${title} — LitByAura`);
+  document.querySelector('meta[property="og:description"]').setAttribute('content', dynamicDescription);
 
   loadProducts();
   setupPriceFilter((filter) => { activePriceFilter = filter; currentPage = 1; loadProducts(); });
