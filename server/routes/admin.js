@@ -397,4 +397,19 @@ router.post('/api/admin/hero-slides/:id/move', (req, res) => {
   res.json(db.prepare('SELECT * FROM hero_slides ORDER BY sort_order').all());
 });
 
+// ---- Static site banner (single row, always id=1) ----
+router.get('/api/admin/site-banner', (req, res) => {
+  res.json(db.prepare('SELECT * FROM site_banner WHERE id = 1').get());
+});
+
+router.put('/api/admin/site-banner', (req, res) => {
+  const { message, linkUrl, isActive } = req.body;
+  db.prepare('UPDATE site_banner SET message = ?, link_url = ?, is_active = ?, updated_at = datetime(\'now\') WHERE id = 1').run(
+    (message || '').trim(),
+    (linkUrl || '').trim(),
+    isActive ? 1 : 0
+  );
+  res.json(db.prepare('SELECT * FROM site_banner WHERE id = 1').get());
+});
+
 module.exports = router;

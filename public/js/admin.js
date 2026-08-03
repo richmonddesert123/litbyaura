@@ -414,26 +414,45 @@ async function loadHeroSlides() {
 
 function heroSlideRow(s, i, total) {
   return `
-    <div class="admin-card" style="padding:12px; display:flex; gap:14px; align-items:center; ${s.is_active ? '' : 'opacity:0.5;'}">
+    <div class="admin-card" style="padding:14px; display:flex; gap:14px; align-items:flex-start; ${s.is_active ? '' : 'opacity:0.5;'}">
       <img src="${s.image_url}" style="width:56px; height:70px; object-fit:cover; border-radius:3px; flex-shrink:0;" onerror="this.style.opacity=0.3">
       <div style="flex:1; min-width:0;">
-        <input value="${s.image_url.replace(/"/g, '&quot;')}" style="width:100%; background:transparent; border:1px solid transparent; color:var(--cream); padding:4px 6px; border-radius:3px; font-size:0.82rem;" onfocus="this.style.borderColor='var(--line-strong)'" onblur="this.style.borderColor='transparent'; saveHeroSlide(${s.id}, {imageUrl: this.value})">
-        <input value="${s.caption.replace(/"/g, '&quot;')}" placeholder="Caption (optional)" style="width:100%; background:transparent; border:1px solid transparent; color:var(--cream-dim); padding:4px 6px; border-radius:3px; font-size:0.78rem; margin-top:2px;" onfocus="this.style.borderColor='var(--line-strong)'" onblur="this.style.borderColor='transparent'; saveHeroSlide(${s.id}, {caption: this.value})">
+        <label style="display:block; font-size:0.7rem; color:var(--cream-dim); margin-bottom:2px;">Image URL</label>
+        <input id="hero-slide-url-${s.id}" value="${s.image_url.replace(/"/g, '&quot;')}" style="width:100%; background:var(--ink); border:1px solid var(--line-strong); color:var(--cream); padding:6px 8px; border-radius:3px; font-size:0.82rem; margin-bottom:8px;">
+        <label style="display:block; font-size:0.7rem; color:var(--cream-dim); margin-bottom:2px;">Caption (optional)</label>
+        <input id="hero-slide-caption-${s.id}" value="${s.caption.replace(/"/g, '&quot;')}" placeholder="e.g. New — Aura Glow Serum" style="width:100%; background:var(--ink); border:1px solid var(--line-strong); color:var(--cream); padding:6px 8px; border-radius:3px; font-size:0.82rem;">
       </div>
-      <button class="btn btn-outline" style="padding:5px 9px; font-size:0.75rem;" onclick="moveHeroSlide(${s.id}, 'up')" ${i === 0 ? 'disabled' : ''}>↑</button>
-      <button class="btn btn-outline" style="padding:5px 9px; font-size:0.75rem;" onclick="moveHeroSlide(${s.id}, 'down')" ${i === total - 1 ? 'disabled' : ''}>↓</button>
-      <button class="btn btn-outline" style="padding:5px 9px; font-size:0.75rem;" onclick="saveHeroSlide(${s.id}, {isActive: ${!s.is_active}})">${s.is_active ? 'Hide' : 'Show'}</button>
-      <button class="btn btn-outline" style="padding:5px 9px; font-size:0.75rem;" onclick="deleteHeroSlide(${s.id})">✕</button>
+      <div style="display:flex; flex-direction:column; gap:6px; flex-shrink:0;">
+        <button class="btn btn-primary" style="padding:6px 12px; font-size:0.78rem;" onclick="saveHeroSlide(${s.id})">Save</button>
+        <div style="display:flex; gap:6px;">
+          <button class="btn btn-outline" style="padding:5px 9px; font-size:0.75rem;" onclick="moveHeroSlide(${s.id}, 'up')" ${i === 0 ? 'disabled' : ''}>↑</button>
+          <button class="btn btn-outline" style="padding:5px 9px; font-size:0.75rem;" onclick="moveHeroSlide(${s.id}, 'down')" ${i === total - 1 ? 'disabled' : ''}>↓</button>
+        </div>
+        <button class="btn btn-outline" style="padding:5px 9px; font-size:0.75rem;" onclick="toggleHeroSlide(${s.id}, ${!s.is_active})">${s.is_active ? 'Hide' : 'Show'}</button>
+        <button class="btn btn-outline" style="padding:5px 9px; font-size:0.75rem;" onclick="deleteHeroSlide(${s.id})">Delete</button>
+      </div>
     </div>`;
 }
 
-async function saveHeroSlide(id, changes) {
+async function saveHeroSlide(id) {
+  const imageUrl = document.getElementById(`hero-slide-url-${id}`).value.trim();
+  const caption = document.getElementById(`hero-slide-caption-${id}`).value.trim();
+  if (!imageUrl) { toast('Image URL is required', true); return; }
   try {
-    await api(`/api/admin/hero-slides/${id}`, { method: 'PUT', body: JSON.stringify(changes) });
+    await api(`/api/admin/hero-slides/${id}`, { method: 'PUT', body: JSON.stringify({ imageUrl, caption }) });
+    toast('Slide saved');
     loadHeroSlides();
   } catch (err) {
     toast(err.message, true);
+  }
+}
+
+async function toggleHeroSlide(id, isActive) {
+  try {
+    await api(`/api/admin/hero-slides/${id}`, { method: 'PUT', body: JSON.stringify({ isActive }) });
     loadHeroSlides();
+  } catch (err) {
+    toast(err.message, true);
   }
 }
 
@@ -461,6 +480,21 @@ function loadSettings() {
       <button class="btn btn-primary" type="submit">Update password</button>
     </form>
 
+    <h3 style="margin-top:36px;">Site banner</h3>
+    <p style="font-size:0.85rem; color:var(--cream-dim); max-width:520px;">
+      A single static message shown at the very top of the storefront, above the
+      scrolling trust-bar — good for a time-limited promo or announcement.
+      Optionally clickable if you add a link. Turn it off any time without losing what you typed.
+    </p>
+    <div class="admin-card" style="max-width:520px; padding:20px; margin-top:12px;">
+      <form id="site-banner-form">
+        <div class="field"><label for="banner-message">Message</label><input id="banner-message" placeholder="e.g. Sale ends Sunday — 20% off everything"></div>
+        <div class="field"><label for="banner-link">Link (optional)</label><input id="banner-link" placeholder="/shop.html?view=all"></div>
+        <div class="field"><label><input type="checkbox" id="banner-active" style="width:auto; margin-right:8px;">Show banner on the site</label></div>
+        <button class="btn btn-primary" type="submit">Save banner</button>
+      </form>
+    </div>
+
     <h3 style="margin-top:36px;">Trust-bar messages</h3>
     <p style="font-size:0.85rem; color:var(--cream-dim); max-width:520px;">
       These are the scrolling messages at the very top of the storefront (e.g. "24/7 customer support").
@@ -472,6 +506,23 @@ function loadSettings() {
       <button class="btn btn-primary" type="submit">Add</button>
     </form>`;
   setupPasswordToggles();
+  loadSiteBanner();
+  document.getElementById('site-banner-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try {
+      await api('/api/admin/site-banner', {
+        method: 'PUT',
+        body: JSON.stringify({
+          message: document.getElementById('banner-message').value,
+          linkUrl: document.getElementById('banner-link').value,
+          isActive: document.getElementById('banner-active').checked,
+        }),
+      });
+      toast('Banner saved');
+    } catch (err) {
+      toast(err.message, true);
+    }
+  });
   document.getElementById('admin-password-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     if (!passwordsMatch('admin-new-password', 'admin-confirm-password')) return;
@@ -513,16 +564,21 @@ async function loadAnnouncements() {
   }
   el.innerHTML = messages.map((m, i) => `
     <div style="display:flex; align-items:center; gap:10px; padding:8px 4px; ${i > 0 ? 'border-top:1px solid var(--line);' : ''}">
-      <input value="${m.text.replace(/"/g, '&quot;')}" data-id="${m.id}" class="announcement-text-input" style="flex:1; background:transparent; border:1px solid transparent; color:var(--cream); padding:6px 8px; border-radius:3px;" onfocus="this.style.borderColor='var(--line-strong)'" onblur="this.style.borderColor='transparent'; saveAnnouncementText(${m.id}, this.value)">
+      <input id="announcement-text-${m.id}" value="${m.text.replace(/"/g, '&quot;')}" style="flex:1; background:var(--ink); border:1px solid var(--line-strong); color:var(--cream); padding:6px 8px; border-radius:3px;">
+      <button class="btn btn-primary" style="padding:5px 12px; font-size:0.75rem;" onclick="saveAnnouncementText(${m.id})">Save</button>
       <button class="btn btn-outline" style="padding:5px 9px; font-size:0.75rem;" onclick="moveAnnouncement(${m.id}, 'up')" ${i === 0 ? 'disabled' : ''}>↑</button>
       <button class="btn btn-outline" style="padding:5px 9px; font-size:0.75rem;" onclick="moveAnnouncement(${m.id}, 'down')" ${i === messages.length - 1 ? 'disabled' : ''}>↓</button>
       <button class="btn btn-outline" style="padding:5px 9px; font-size:0.75rem;" onclick="deleteAnnouncement(${m.id})">✕</button>
     </div>`).join('');
 }
 
-async function saveAnnouncementText(id, text) {
+async function saveAnnouncementText(id) {
+  const text = document.getElementById(`announcement-text-${id}`).value.trim();
+  if (!text) { toast('Message text is required', true); return; }
   try {
     await api(`/api/admin/announcements/${id}`, { method: 'PUT', body: JSON.stringify({ text }) });
+    toast('Message saved');
+    loadAnnouncements();
   } catch (err) {
     toast(err.message, true);
     loadAnnouncements();
@@ -537,6 +593,17 @@ async function moveAnnouncement(id, direction) {
 async function deleteAnnouncement(id) {
   await api(`/api/admin/announcements/${id}`, { method: 'DELETE' });
   loadAnnouncements();
+}
+
+async function loadSiteBanner() {
+  try {
+    const banner = await api('/api/admin/site-banner');
+    document.getElementById('banner-message').value = banner.message || '';
+    document.getElementById('banner-link').value = banner.link_url || '';
+    document.getElementById('banner-active').checked = !!banner.is_active;
+  } catch {
+    // leave the form at its defaults if this fails
+  }
 }
 
 checkSetupThenAuth();

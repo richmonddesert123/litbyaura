@@ -168,4 +168,12 @@ router.get('/api/hero-slides', (req, res) => {
   res.json(db.prepare('SELECT id, image_url, caption FROM hero_slides WHERE is_active = 1 ORDER BY sort_order').all());
 });
 
+// Static site banner (single message, not the scrolling marquee) - returns
+// null if turned off or never configured, so the frontend can just hide it.
+router.get('/api/site-banner', (req, res) => {
+  const banner = db.prepare('SELECT message, link_url, is_active FROM site_banner WHERE id = 1').get();
+  if (!banner || !banner.is_active || !banner.message) return res.json(null);
+  res.json({ message: banner.message, linkUrl: banner.link_url });
+});
+
 module.exports = router;

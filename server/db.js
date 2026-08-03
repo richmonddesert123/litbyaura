@@ -157,6 +157,21 @@ CREATE TABLE IF NOT EXISTS hero_slides (
   is_active   INTEGER NOT NULL DEFAULT 1,
   created_at  TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+-- ---- Static site banner ----
+-- Distinct from announcements (the scrolling multi-message trust-bar
+-- marquee) - this is ONE static, non-scrolling message, e.g. for a
+-- time-limited promo ("Sale ends Sunday — 20% off everything"). Always
+-- exactly one row (id=1), updated in place rather than a list. Optional
+-- link_url makes the whole banner clickable. is_active lets the admin turn
+-- it off without losing the message/link they'd set up.
+CREATE TABLE IF NOT EXISTS site_banner (
+  id          INTEGER PRIMARY KEY CHECK (id = 1),
+  message     TEXT NOT NULL DEFAULT '',
+  link_url    TEXT NOT NULL DEFAULT '',
+  is_active   INTEGER NOT NULL DEFAULT 0,
+  updated_at  TEXT NOT NULL DEFAULT (datetime('now'))
+);
 `);
 
 // ---- Migrations for databases created before a column existed ----
@@ -226,5 +241,9 @@ if (heroSlideCount === 0) {
   const insertMany = db.transaction((rows) => rows.forEach((url, i) => insert.run(url, '', i)));
   insertMany(['/images/hero-slide-1.jpg', '/images/hero-slide-2.jpg', '/images/hero-slide-3.jpg', '/images/hero-slide-4.jpg']);
 }
+
+// ---- Seed the single site_banner row (idempotent - INSERT OR IGNORE means
+// this never overwrites an admin's existing banner content/settings) ----
+db.prepare('INSERT OR IGNORE INTO site_banner (id, message, link_url, is_active) VALUES (1, ?, ?, 0)').run('', '');
 
 module.exports = db;

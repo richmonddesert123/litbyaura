@@ -119,6 +119,22 @@ p { margin: 0 0 1em; color: var(--cream-dim); }
   display: flex; align-items: center; justify-content: center;
 }
 
+/* ---- Static site banner (single message, not scrolling - distinct from
+   the trust-bar marquee below it) ---- */
+.site-banner {
+  display: block;
+  background: var(--gold);
+  color: var(--ink);
+  text-align: center;
+  padding: 10px 20px;
+  font-family: var(--font-utility);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+a.site-banner:hover { background: var(--gold-bright); }
+.site-banner .arrow { margin-left: 6px; }
+
 /* ---- Trust bar (marquee, messages come from GET /api/announcements) ---- */
 .trust-bar {
   background: var(--ink-raised);

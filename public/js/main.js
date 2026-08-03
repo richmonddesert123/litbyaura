@@ -109,6 +109,29 @@ function setupPasswordToggles(root = document) {
  * way if there are currently no best-seller products.
  * @param {string} activeView - one of 'all'|'new-arrivals'|'concern'|'skin-type'|'brand'|'best-sellers'|''
  */
+/**
+ * Renders the static site banner (a single admin-set message, optionally
+ * clickable) into a #site-banner element if present on the page. Hides
+ * itself entirely if the banner is off or has never been configured -
+ * this is intentionally separate from renderShopNav's trust-bar messages,
+ * which are a different, scrolling feature.
+ */
+async function renderSiteBanner() {
+  const el = document.getElementById('site-banner');
+  if (!el) return;
+  try {
+    const banner = await api('/api/site-banner');
+    if (!banner) { el.style.display = 'none'; return; }
+    if (banner.linkUrl) {
+      el.outerHTML = `<a id="site-banner" class="site-banner" href="${banner.linkUrl}">${banner.message}<span class="arrow">→</span></a>`;
+    } else {
+      el.textContent = banner.message;
+    }
+  } catch {
+    el.style.display = 'none';
+  }
+}
+
 async function renderShopNav(activeView = '') {
   const el = document.getElementById('shop-nav');
   if (!el) return;

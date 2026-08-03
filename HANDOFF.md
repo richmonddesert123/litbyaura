@@ -10,7 +10,36 @@ screenshot pass). Not yet deployed anywhere; runs on `localhost:3000`.
 
 ### Most recent round
 
-- **SEO: sitemap, robots.txt, and meta tags.** `GET /sitemap.xml` and `GET
+- **Fixed silent auto-save UX (hero slides + trust-bar messages).** Both
+  previously saved on `onblur` with zero visual confirmation — genuinely
+  confusing, since there was no way to tell "did that save, or did I just
+  lose it by clicking away?" Both now have an explicit **Save** button and a
+  confirmation toast ("Slide saved" / "Message saved"). Verified end-to-end
+  for both: edited a field, clicked Save, confirmed the toast appeared AND
+  the change actually persisted after a reload. Audited the rest of the
+  admin panel for the same pattern (`grep -rn "onblur="`) — nothing else
+  had it; order-status changes and the (removed) category system already
+  had proper confirmations or explicit submit actions.
+- **New: static site banner**, distinct from the trust-bar marquee. Single
+  message, not scrolling, optionally a clickable link, admin toggles it on/
+  off without losing the saved message/link. Backed by a `site_banner`
+  table with exactly one row (`id=1`, enforced via `CHECK (id = 1)`) rather
+  than a list — `GET /api/site-banner` returns `null` if it's off or was
+  never configured, and the frontend (`renderSiteBanner()` in `main.js`)
+  just hides the `#site-banner` element entirely in that case. Admin UI
+  lives in Settings, above the trust-bar section, with its own Save button
+  from the start (learned from the mistake above). **Homepage only** — the
+  `<div id="site-banner">` container + `renderSiteBanner()` call live in
+  `index.html` alone; every other customer-facing page originally had this
+  too but it was deliberately removed per a follow-up request, so if
+  "show it everywhere" is wanted later, the pattern to restore is: add the
+  same div right after `<body>` and a `renderSiteBanner();` call after the
+  `main.js` script tag (the static policy pages under `pages/` would also
+  need `<script src="/js/main.js"></script>` re-added, since it's not
+  loaded there for anything else). Verified via Playwright across 7 pages:
+  present only on `/`, absent on shop/product/cart/checkout/account/contact.
+
+ `GET /sitemap.xml` and `GET
   /robots.txt` are now live routes (`server/routes/sitemap.js`) generated
   fresh from the DB on every request — not static files — so the sitemap
   always reflects current active products/concerns/skin-types/brands with no
