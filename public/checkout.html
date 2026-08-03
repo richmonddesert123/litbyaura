@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en" data-currency-symbol="GH₵">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Checkout — LitByAura</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="alternate icon" href="/favicon.ico">
+<link rel="apple-touch-icon" href="/images/apple-touch-icon.png">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Manrope:wght@400;500;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a href="/" class="logo"><img src="/images/logo.png" class="logo-img" alt="LitByAura"></a>
+    <nav class="nav-links">
+      <a href="/#shop">Shop</a>
+      <a href="/#reviews">Reviews</a>
+      <a href="/pages/contact.html">Contact</a>
+    </nav>
+    <div class="header-actions">
+      <a href="/account.html">Account</a>
+      <a href="/cart.html" class="cart-link" aria-label="Cart">🛍️ Cart <span class="cart-count" data-cart-count>0</span></a>
+    </div>
+  </div>
+</header>
+<nav class="shop-nav" id="shop-nav"></nav>
+
+<section class="section">
+  <div class="wrap">
+    <h1>Checkout</h1>
+    <div class="checkout-grid">
+      <form id="checkout-form">
+        <div class="field"><label for="customerName">Full name</label><input id="customerName" required></div>
+        <div class="field"><label for="phone">Phone number</label><input id="phone" type="tel" required placeholder="024 123 4567"></div>
+        <div class="field"><label for="email">Email (optional — get order updates)</label><input id="email" type="email" placeholder="you@example.com"></div>
+        <div class="field-row">
+          <div class="field"><label for="city">City / Town</label><input id="city" required></div>
+          <div class="field"><label for="address">Delivery address</label><input id="address" required></div>
+        </div>
+        <div class="field"><label for="notes">Delivery notes (optional)</label><textarea id="notes" rows="2" placeholder="Landmark, preferred delivery time, etc."></textarea></div>
+
+        <div class="field">
+          <label>Payment method</label>
+          <div id="payment-methods">Loading payment options…</div>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block" id="submit-btn">Place order</button>
+      </form>
+
+      <aside class="summary-card">
+        <h3 class="mt-0">Order summary</h3>
+        <div id="summary-lines">Loading…</div>
+        <div class="summary-total"><span>Total</span><span id="summary-total">—</span></div>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<script src="/js/main.js"></script>
+<script src="/js/checkout.js"></script>
+</body>
+</html>

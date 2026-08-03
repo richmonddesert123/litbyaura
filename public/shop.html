@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en" data-currency-symbol="GH₵">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shop — LitByAura</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="alternate icon" href="/favicon.ico">
+<link rel="apple-touch-icon" href="/images/apple-touch-icon.png">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Manrope:wght@400;500;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a href="/" class="logo"><img src="/images/logo.png" class="logo-img" alt="LitByAura"></a>
+    <nav class="nav-links">
+      <a href="/#shop">Shop</a>
+      <a href="/#reviews">Reviews</a>
+      <a href="/pages/contact.html">Contact</a>
+    </nav>
+    <div class="header-actions">
+      <a href="/account.html">Account</a>
+      <a href="/cart.html" class="cart-link" aria-label="Cart">🛍️ Cart <span class="cart-count" data-cart-count>0</span></a>
+    </div>
+  </div>
+</header>
+<nav class="shop-nav" id="shop-nav"></nav>
+
+<section class="section">
+  <div class="wrap">
+    <p class="eyebrow" id="shop-eyebrow">Shop</p>
+    <h1 id="shop-title" class="mt-0">Products</h1>
+    <form id="price-filter-form" class="filter-bar">
+      <div class="field"><label for="price-min">Min price (GH₵)</label><input id="price-min" type="number" min="0" step="0.01" placeholder="0"></div>
+      <span class="filter-bar-sep">–</span>
+      <div class="field"><label for="price-max">Max price (GH₵)</label><input id="price-max" type="number" min="0" step="0.01" placeholder="Any"></div>
+      <button type="submit" class="btn btn-outline">Filter</button>
+      <a href="#" id="price-filter-clear" class="filter-bar-clear">Clear</a>
+    </form>
+    <div class="product-grid" id="product-grid"><p>Loading…</p></div>
+    <div id="pagination-container"></div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="wrap"><p class="footer-meta">© 2026 LitByAura. Payments accepted: Cash on Delivery.</p></div>
+</footer>
+
+<script src="/js/main.js"></script>
+<script>
+const VIEW_TITLES = {
+  'all': 'All products',
+  'new-arrivals': 'New Arrivals',
+  'best-sellers': 'Best Sellers',
+};
+
+let view = 'all';
+let paramValue = ''; // concern/skin-type slug, or brand name
+let currentPage = 1;
+let activePriceFilter = { minPrice: null, maxPrice: null };
+
+function renderCard(p) {
+  const onSale = p.compare_at_pesewas && p.compare_at_pesewas > p.price_pesewas;
+  const pct = onSale ? Math.round((1 - p.price_pesewas / p.compare_at_pesewas) * 100) : 0;
+  const cover = (p.images && p.images[0]) || p.image_url;
+  return `
+    <div class="product-card">
+      <a href="/product.html?slug=${encodeURIComponent(p.slug)}" class="product-media">
+        ${onSale ? `<span class="badge-sale">${pct}% OFF</span>` : ''}
+        ${p.isBestSeller ? `<span class="badge-bestseller" style="left:auto; right:12px; top:12px; position:absolute;">★ Best seller</span>` : ''}
+        <img src="${cover}" alt="${p.name}">
+      </a>
+      <div class="product-body">
+        <a href="/product.html?slug=${encodeURIComponent(p.slug)}"><h3 class="product-name">${p.name}</h3></a>
+        ${p.brand ? `<div class="taxo-badges"><span class="taxo-badge brand">${p.brand}</span></div>` : ''}
+        <p class="product-desc">${p.description}</p>
+        <div class="price-row">
+          <span class="price-now">${formatMoney(p.price_pesewas)}</span>
+          ${onSale ? `<span class="price-was">${formatMoney(p.compare_at_pesewas)}</span>` : ''}
+        </div>
+        <div style="display:flex; gap:8px; margin-top:6px;">
+          <button class="btn btn-outline" style="flex:1;" onclick="addToCart(${p.id});toast('Added to cart');" ${p.stock === 0 ? 'disabled' : ''}>Add to cart</button>
+          <a class="btn btn-primary" style="flex:1;" href="/checkout.html?buyNow=${p.id}&qty=1">Order now</a>
+        </div>
+      </div>
+    </div>`;
+}
+
+function buildQuery() {
+  const params = new URLSearchParams();
+  if (view === 'concern') params.set('concern', paramValue);
+  if (view === 'skin-type') params.set('skinType', paramValue);
+  if (view === 'brand') params.set('brand', paramValue);
+  if (view === 'best-sellers') params.set('bestSeller', '1');
+  if (view === 'new-arrivals') params.set('newArrivals', '1');
+  if (activePriceFilter.minPrice != null) params.set('minPrice', activePriceFilter.minPrice);
+  if (activePriceFilter.maxPrice != null) params.set('maxPrice', activePriceFilter.maxPrice);
+  return params.toString();
+}
+
+async function loadProducts() {
+  const grid = document.getElementById('product-grid');
+  const paginationEl = document.getElementById('pagination-container');
+  try {
+    if (view === 'all') {
+      const params = new URLSearchParams();
+      params.set('page', currentPage);
+      // price filter isn't supported on the paginated /api/products/all
+      // endpoint (it's a separate, simpler endpoint) - if a price filter is
+      // active, fall back to the general endpoint client-side unpaginated.
+      if (activePriceFilter.minPrice != null || activePriceFilter.maxPrice != null) {
+        const qs = buildQuery();
+        const products = await api(`/api/products?${qs}`);
+        grid.innerHTML = products.length ? products.map(renderCard).join('') : '<p>No products match your filters.</p>';
+        paginationEl.innerHTML = '';
+        return;
+      }
+      const result = await api(`/api/products/all?${params.toString()}`);
+      grid.innerHTML = result.products.length ? result.products.map(renderCard).join('') : '<p>No products yet.</p>';
+      renderPagination(result);
+    } else {
+      const qs = buildQuery();
+      const products = await api(`/api/products?${qs}`);
+      grid.innerHTML = products.length ? products.map(renderCard).join('') : '<p>No products match this filter yet.</p>';
+      paginationEl.innerHTML = '';
+    }
+  } catch {
+    grid.innerHTML = '<p>Could not load products right now.</p>';
+  }
+}
+
+function renderPagination(result) {
+  const el = document.getElementById('pagination-container');
+  if (result.totalPages <= 1) { el.innerHTML = ''; return; }
+  el.innerHTML = `
+    <div class="pagination-bar">
+      <button class="btn btn-outline" ${!result.hasPrev ? 'disabled' : ''} onclick="goToPage(${result.page - 1})">← Prev</button>
+      <span class="page-info">Page ${result.page} of ${result.totalPages}</span>
+      <button class="btn btn-outline" ${!result.hasNext ? 'disabled' : ''} onclick="goToPage(${result.page + 1})">Next →</button>
+    </div>`;
+}
+
+function goToPage(page) {
+  currentPage = page;
+  loadProducts();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+async function init() {
+  const params = new URLSearchParams(location.search);
+  view = params.get('view') || 'all';
+  paramValue = params.get('slug') || params.get('name') || '';
+  currentPage = Math.max(1, parseInt(params.get('page') || '1', 10));
+
+  renderShopNav(view);
+
+  let title = VIEW_TITLES[view] || 'Products';
+  let eyebrow = 'Shop';
+  if (view === 'concern' || view === 'skin-type') {
+    try {
+      const list = await api(view === 'concern' ? '/api/concerns' : '/api/skin-types');
+      const match = list.find((x) => x.slug === paramValue);
+      title = match ? match.name : title;
+      eyebrow = view === 'concern' ? 'Shop by Concern' : 'Shop by Skin Type';
+    } catch { /* keep default title */ }
+  } else if (view === 'brand') {
+    title = paramValue || 'Brand';
+    eyebrow = 'Brands';
+  } else if (view === 'all') {
+    eyebrow = 'The full range';
+  }
+  document.getElementById('shop-eyebrow').textContent = eyebrow;
+  document.getElementById('shop-title').textContent = title;
+  document.title = `${title} — LitByAura`;
+
+  loadProducts();
+  setupPriceFilter((filter) => { activePriceFilter = filter; currentPage = 1; loadProducts(); });
+}
+init();
+</script>
+</body>
+</html>

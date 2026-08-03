@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en" data-currency-symbol="GH₵">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Your cart — LitByAura</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="alternate icon" href="/favicon.ico">
+<link rel="apple-touch-icon" href="/images/apple-touch-icon.png">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Manrope:wght@400;500;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a href="/" class="logo"><img src="/images/logo.png" class="logo-img" alt="LitByAura"></a>
+    <nav class="nav-links">
+      <a href="/#shop">Shop</a>
+      <a href="/#reviews">Reviews</a>
+      <a href="/pages/contact.html">Contact</a>
+    </nav>
+    <div class="header-actions">
+      <a href="/account.html">Account</a>
+      <a href="/cart.html" class="cart-link" aria-label="Cart">🛍️ Cart <span class="cart-count" data-cart-count>0</span></a>
+    </div>
+  </div>
+</header>
+<nav class="shop-nav" id="shop-nav"></nav>
+
+<section class="section">
+  <div class="wrap">
+    <h1>Your cart</h1>
+    <div id="cart-content">Loading…</div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="wrap"><p class="footer-meta">© 2026 LitByAura. Payments accepted: Cash on Delivery.</p></div>
+</footer>
+
+<script src="/js/main.js"></script>
+<script>
+let productsById = {};
+
+renderShopNav();
+
+async function render() {
+  const cart = getCart();
+  const container = document.getElementById('cart-content');
+  if (cart.length === 0) {
+    container.innerHTML = `<div class="empty-state"><p>Your cart is empty.</p><a href="/#shop" class="btn btn-primary">Continue shopping</a></div>`;
+    return;
+  }
+  const products = await api('/api/products');
+  productsById = Object.fromEntries(products.map((p) => [p.id, p]));
+
+  let subtotal = 0;
+  const lines = cart.map((line) => {
+    const p = productsById[line.productId];
+    if (!p) return '';
+    const lineTotal = p.price_pesewas * line.quantity;
+    subtotal += lineTotal;
+    return `
+      <div class="cart-line">
+        <div style="display:flex; gap:14px; align-items:center;">
+          <img src="${p.image_url}" alt="${p.name}" style="width:56px;height:56px;object-fit:cover;border-radius:3px;">
+          <div>
+            <div>${p.name}</div>
+            <div class="qty-control" style="margin-top:6px;">
+              <button onclick="changeQty(${p.id}, ${line.quantity - 1})">−</button>
+              <span>${line.quantity}</span>
+              <button onclick="changeQty(${p.id}, ${line.quantity + 1})">+</button>
+              <a href="#" onclick="changeQty(${p.id}, 0); return false;" style="margin-left:12px; color: var(--cream-dim); font-size:0.8rem;">Remove</a>
+            </div>
+          </div>
+        </div>
+        <div>${formatMoney(lineTotal)}</div>
+      </div>`;
+  }).join('');
+
+  container.innerHTML = `
+    <div class="checkout-grid">
+      <div>${lines}</div>
+      <div class="summary-card">
+        <div class="summary-total"><span>Subtotal</span><span>${formatMoney(subtotal)}</span></div>
+        <a href="/checkout.html" class="btn btn-primary btn-block" style="margin-top:18px;">Checkout</a>
+        <p style="font-size:0.78rem; margin-top:12px;">Pay on delivery, or by card / mobile money at checkout.</p>
+      </div>
+    </div>`;
+}
+
+function changeQty(productId, qty) {
+  updateCartQuantity(productId, qty);
+  render();
+}
+
+render();
+</script>
+</body>
+</html>

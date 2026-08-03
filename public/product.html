@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en" data-currency-symbol="GH₵">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LitByAura</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="alternate icon" href="/favicon.ico">
+<link rel="apple-touch-icon" href="/images/apple-touch-icon.png">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Manrope:wght@400;500;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a href="/" class="logo"><img src="/images/logo.png" class="logo-img" alt="LitByAura"></a>
+    <nav class="nav-links">
+      <a href="/#shop">Shop</a>
+      <a href="/#reviews">Reviews</a>
+      <a href="/pages/contact.html">Contact</a>
+    </nav>
+    <div class="header-actions">
+      <a href="/account.html">Account</a>
+      <a href="/cart.html" class="cart-link" aria-label="Cart">🛍️ Cart <span class="cart-count" data-cart-count>0</span></a>
+    </div>
+  </div>
+</header>
+<nav class="shop-nav" id="shop-nav"></nav>
+
+<section class="section">
+  <div class="wrap" id="product-detail">
+    <p>Loading…</p>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p class="footer-meta">© 2026 LitByAura. Payments accepted: Cash on Delivery.</p>
+  </div>
+</footer>
+
+<script src="/js/main.js"></script>
+<script>
+let galleryImages = [];
+let galleryIndex = 0;
+
+function renderGallery() {
+  const main = document.getElementById('gallery-main-img');
+  main.src = galleryImages[galleryIndex];
+  document.querySelectorAll('.gallery-thumb').forEach((el, i) => el.classList.toggle('active', i === galleryIndex));
+}
+
+function galleryGo(delta) {
+  galleryIndex = (galleryIndex + delta + galleryImages.length) % galleryImages.length;
+  renderGallery();
+}
+
+function wireGallerySwipe(el) {
+  let startX = null;
+  el.addEventListener('touchstart', (e) => { startX = e.touches[0].clientX; }, { passive: true });
+  el.addEventListener('touchend', (e) => {
+    if (startX === null) return;
+    const dx = e.changedTouches[0].clientX - startX;
+    if (Math.abs(dx) > 40) galleryGo(dx < 0 ? 1 : -1);
+    startX = null;
+  });
+}
+
+async function load() {
+  const slug = new URLSearchParams(location.search).get('slug');
+  const el = document.getElementById('product-detail');
+  renderShopNav();
+  if (!slug) { el.innerHTML = '<p>Product not found.</p>'; return; }
+  try {
+    const p = await api(`/api/products/${encodeURIComponent(slug)}`);
+    galleryImages = p.images && p.images.length ? p.images : [p.image_url];
+    galleryIndex = 0;
+    const onSale = p.compare_at_pesewas && p.compare_at_pesewas > p.price_pesewas;
+
+    el.innerHTML = `
+      <div class="hero-grid" style="align-items:flex-start;">
+        <div>
+          <div class="gallery-main" id="gallery-main">
+            ${galleryImages.length > 1 ? '<button class="gallery-arrow prev" onclick="galleryGo(-1)" aria-label="Previous image">‹</button>' : ''}
+            <img id="gallery-main-img" src="${galleryImages[0]}" alt="${p.name}">
+            ${galleryImages.length > 1 ? '<button class="gallery-arrow next" onclick="galleryGo(1)" aria-label="Next image">›</button>' : ''}
+          </div>
+          ${galleryImages.length > 1 ? `
+            <div class="gallery-thumbs">
+              ${galleryImages.map((src, i) => `<div class="gallery-thumb ${i === 0 ? 'active' : ''}" onclick="galleryIndex=${i};renderGallery();"><img src="${src}" alt="${p.name} angle ${i + 1}"></div>`).join('')}
+            </div>` : ''}
+        </div>
+        <div>
+          <p class="eyebrow">${p.stock > 0 ? 'In stock' : 'Out of stock'}</p>
+          <h1>${p.name}</h1>
+          <div class="taxo-badges" style="margin-bottom:12px;">
+            ${p.isBestSeller ? '<span class="badge-bestseller">★ Best seller</span>' : ''}
+            ${p.brand ? `<a href="/shop.html?view=brand&name=${encodeURIComponent(p.brand)}"><span class="taxo-badge brand">${p.brand}</span></a>` : ''}
+            ${p.concerns.map((c) => `<a href="/shop.html?view=concern&slug=${encodeURIComponent(c.slug)}"><span class="taxo-badge">${c.name}</span></a>`).join('')}
+            ${p.skinTypes.map((s) => `<a href="/shop.html?view=skin-type&slug=${encodeURIComponent(s.slug)}"><span class="taxo-badge">${s.name} skin</span></a>`).join('')}
+          </div>
+          <div class="price-row" style="margin-bottom:16px;">
+            <span class="price-now" style="font-size:1.4rem;">${formatMoney(p.price_pesewas)}</span>
+            ${onSale ? `<span class="price-was">${formatMoney(p.compare_at_pesewas)}</span>` : ''}
+          </div>
+          <p>${p.description}</p>
+          <div class="field" style="max-width:140px;">
+            <label for="qty">Quantity</label>
+            <input type="number" id="qty" value="1" min="1" max="${p.stock}">
+          </div>
+          <div style="display:flex; gap:12px; margin-top:20px;">
+            <button class="btn btn-outline" id="add-btn" ${p.stock === 0 ? 'disabled' : ''}>Add to cart</button>
+            <a class="btn btn-primary" id="buy-btn" href="#">Order now — pay on delivery</a>
+          </div>
+        </div>
+      </div>`;
+
+    wireGallerySwipe(document.getElementById('gallery-main'));
+
+    document.getElementById('add-btn').addEventListener('click', () => {
+      const qty = Math.max(1, parseInt(document.getElementById('qty').value || '1', 10));
+      addToCart(p.id, qty);
+      toast('Added to cart');
+    });
+    const buyBtn = document.getElementById('buy-btn');
+    function updateBuyLink() {
+      const qty = Math.max(1, parseInt(document.getElementById('qty').value || '1', 10));
+      // Buy Now bypasses the cart entirely: product id + quantity travel via
+      // URL params only, so checkout builds the order from exactly this item.
+      buyBtn.href = `/checkout.html?buyNow=${p.id}&qty=${qty}`;
+    }
+    document.getElementById('qty').addEventListener('input', updateBuyLink);
+    updateBuyLink();
+    if (p.stock === 0) buyBtn.classList.add('btn-outline');
+  } catch (e) {
+    el.innerHTML = '<p>Product not found.</p>';
+  }
+}
+load();
+</script>
+</body>
+</html>

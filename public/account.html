@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en" data-currency-symbol="GH₵">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Your account — LitByAura</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="alternate icon" href="/favicon.ico">
+<link rel="apple-touch-icon" href="/images/apple-touch-icon.png">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Manrope:wght@400;500;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a href="/" class="logo"><img src="/images/logo.png" class="logo-img" alt="LitByAura"></a>
+    <nav class="nav-links">
+      <a href="/#shop">Shop</a>
+      <a href="/#reviews">Reviews</a>
+      <a href="/pages/contact.html">Contact</a>
+    </nav>
+    <div class="header-actions">
+      <a href="/account.html">Account</a>
+      <a href="/cart.html" class="cart-link" aria-label="Cart">🛍️ Cart <span class="cart-count" data-cart-count>0</span></a>
+    </div>
+  </div>
+</header>
+
+<section class="section">
+  <div class="wrap" style="max-width:640px;">
+    <h1 id="account-heading">Your account</h1>
+
+    <!-- Logged out: login / signup -->
+    <div id="auth-screens">
+      <div class="tab-strip">
+        <button data-auth-tab="login" class="active">Log in</button>
+        <button data-auth-tab="signup">Create account</button>
+      </div>
+
+      <form id="login-form">
+        <div class="field"><label for="login-email">Email</label><input id="login-email" type="email" required></div>
+        <div class="field password-field"><label for="login-password">Password</label><input id="login-password" type="password" required></div>
+        <button class="btn btn-primary btn-block" type="submit">Log in</button>
+      </form>
+      <p class="auth-switch"><a href="#" id="show-forgot-link">Forgot your password?</a></p>
+
+      <form id="forgot-form" style="display:none;">
+        <p style="font-size:0.85rem; color:var(--cream-dim);">Enter your account email and we'll send a link to reset your password.</p>
+        <div class="field"><label for="forgot-email">Email</label><input id="forgot-email" type="email" required></div>
+        <button class="btn btn-primary btn-block" type="submit">Send reset link</button>
+        <p class="auth-switch"><a href="#" id="hide-forgot-link">Back to log in</a></p>
+      </form>
+
+      <form id="signup-form" style="display:none;">
+        <div class="field"><label for="signup-name">Full name</label><input id="signup-name" required></div>
+        <div class="field"><label for="signup-email">Email</label><input id="signup-email" type="email" required></div>
+        <div class="field password-field"><label for="signup-password">Password (min. 6 characters)</label><input id="signup-password" type="password" minlength="6" required></div>
+        <div class="field password-field"><label for="signup-confirm-password">Confirm password</label><input id="signup-confirm-password" type="password" minlength="6" required></div>
+        <div class="field"><label for="signup-phone">Phone (optional)</label><input id="signup-phone" type="tel"></div>
+        <p style="font-size:0.82rem; color:var(--cream-dim);">Add your shipping address after signing up to speed up future checkouts.</p>
+        <button class="btn btn-primary btn-block" type="submit">Create account</button>
+      </form>
+    </div>
+
+    <!-- Logged in: profile + order history -->
+    <div id="account-screen" style="display:none;">
+      <div class="tab-strip">
+        <button data-account-tab="orders" class="active">Your orders</button>
+        <button data-account-tab="profile">Profile &amp; shipping</button>
+        <button data-account-tab="password">Change password</button>
+      </div>
+
+      <div id="account-tab-orders">
+        <div id="order-history"><p>Loading…</p></div>
+      </div>
+
+      <div id="account-tab-profile" style="display:none;">
+        <div class="panel-card">
+          <form id="profile-form">
+            <div class="field"><label for="profile-name">Full name</label><input id="profile-name" required></div>
+            <div class="field"><label>Email</label><input id="profile-email" disabled></div>
+            <div class="field-row">
+              <div class="field"><label for="profile-phone">Phone</label><input id="profile-phone"></div>
+              <div class="field"><label for="profile-city">City / Town</label><input id="profile-city"></div>
+            </div>
+            <div class="field"><label for="profile-address">Delivery address</label><input id="profile-address"></div>
+            <button class="btn btn-primary" type="submit">Save shipping info</button>
+          </form>
+        </div>
+      </div>
+
+      <div id="account-tab-password" style="display:none;">
+        <div class="panel-card">
+          <form id="password-form">
+            <div class="field password-field"><label for="current-password">Current password</label><input id="current-password" type="password" required></div>
+            <div class="field password-field"><label for="new-password">New password (min. 6 characters)</label><input id="new-password" type="password" minlength="6" required></div>
+            <div class="field password-field"><label for="confirm-password">Confirm new password</label><input id="confirm-password" type="password" minlength="6" required></div>
+            <button class="btn btn-primary" type="submit">Update password</button>
+          </form>
+        </div>
+      </div>
+
+      <p style="margin-top:28px;"><a href="#" id="logout-link" style="color:var(--danger); font-size:0.85rem;">Log out</a></p>
+    </div>
+
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="wrap"><p class="footer-meta">© 2026 LitByAura. Payments accepted: Cash on Delivery.</p></div>
+</footer>
+
+<script src="/js/main.js"></script>
+<script src="/js/account.js"></script>
+</body>
+</html>

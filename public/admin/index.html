@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en" data-currency-symbol="GH₵">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — LitByAura</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="alternate icon" href="/favicon.ico">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Manrope:wght@400;500;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<!-- First-run setup: only ever shown while zero admin accounts exist -->
+<div id="setup-screen" class="auth-card" style="display:none;">
+  <h1 style="text-align:left;">Create your admin account</h1>
+  <p style="font-size:0.85rem;">No admin account exists yet. This form only works once — after this account is created, new admins can no longer be self-created and must be added by whoever controls the server.</p>
+  <form id="setup-form">
+    <div class="field"><label for="setup-email">Email</label><input id="setup-email" type="email" required></div>
+    <div class="field password-field"><label for="setup-password">Password (min. 6 characters)</label><input id="setup-password" type="password" minlength="6" required></div>
+    <div class="field password-field"><label for="setup-confirm-password">Confirm password</label><input id="setup-confirm-password" type="password" minlength="6" required></div>
+    <button class="btn btn-primary btn-block" type="submit">Create admin account</button>
+  </form>
+</div>
+
+<!-- Login screen -->
+<div id="login-screen" class="auth-card" style="display:none;">
+  <h1 style="text-align:left;">Admin login</h1>
+  <form id="login-form">
+    <div class="field"><label for="email">Email</label><input id="email" type="email" required></div>
+    <div class="field password-field"><label for="password">Password</label><input id="password" type="password" required></div>
+    <button class="btn btn-primary btn-block" type="submit">Log in</button>
+  </form>
+  <p style="margin-top:12px;"><a href="#" id="forgot-link" style="font-size:0.85rem;">Forgot password?</a></p>
+</div>
+
+<!-- Dashboard -->
+<div id="dashboard" class="admin-shell" style="display:none;">
+  <nav class="admin-nav">
+    <div style="padding: 0 24px 20px; font-size:1.2rem;"><img src="/images/logo.png" class="logo-img" alt="LitByAura"></div>
+    <a href="/" target="_blank" rel="noopener" class="store-link" style="margin: 4px 24px 20px;">↗ View store</a>
+    <a href="#" data-tab="orders" class="active">Orders</a>
+    <a href="#" data-tab="products">Products</a>
+    <a href="#" data-tab="hero">Hero Slides</a>
+    <a href="#" data-tab="settings">Settings</a>
+    <a href="#" id="logout-link" style="margin-top:24px; color: var(--danger);">Log out</a>
+  </nav>
+  <main class="admin-main">
+    <div id="tab-orders"></div>
+    <div id="tab-products" style="display:none;"></div>
+    <div id="tab-hero" style="display:none;"></div>
+    <div id="tab-settings" style="display:none;"></div>
+  </main>
+</div>
+
+<div id="modal-root"></div>
+
+<script src="/js/main.js"></script>
+<script src="/js/admin.js"></script>
+</body>
+</html>

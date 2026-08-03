@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en" data-currency-symbol="GH₵">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Order confirmed — LitByAura</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="alternate icon" href="/favicon.ico">
+<link rel="apple-touch-icon" href="/images/apple-touch-icon.png">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Manrope:wght@400;500;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="wrap"><a href="/" class="logo"><img src="/images/logo.png" class="logo-img" alt="LitByAura"></a></div>
+</header>
+<section class="section">
+  <div class="wrap" id="content" style="max-width:600px;">Loading…</div>
+</section>
+<script src="/js/main.js"></script>
+<script>
+async function load() {
+  const orderNumber = location.pathname.split('/')[2];
+  const el = document.getElementById('content');
+  try {
+    const order = await api(`/api/orders/${orderNumber}`);
+    el.innerHTML = `
+      <p class="eyebrow">Order placed</p>
+      <h1>Thank you, ${order.customer_name.split(' ')[0]}.</h1>
+      <p>Your order <strong>${order.order_number}</strong> is confirmed and being prepared.</p>
+      <div class="summary-card" style="margin-top:24px;">
+        ${order.items.map(i => `<div class="cart-line"><span>${i.product_name} × ${i.quantity}</span><span>${formatMoney(i.unit_price_pesewas * i.quantity)}</span></div>`).join('')}
+        <div class="summary-total"><span>Total</span><span>${formatMoney(order.subtotal_pesewas)}</span></div>
+      </div>
+      <p style="margin-top:24px;">
+        Payment method: <strong>${order.payment_method === 'cod' ? 'Cash on Delivery' : order.payment_method}</strong>
+        &nbsp;·&nbsp; Status: <span class="status-pill ${order.payment_status}">${order.payment_status}</span>
+      </p>
+      <a href="/#shop" class="btn btn-outline" style="margin-top:16px;">Continue shopping</a>`;
+  } catch {
+    el.innerHTML = '<h1>Order not found</h1><p>We could not find that order.</p>';
+  }
+}
+load();
+</script>
+</body>
+</html>

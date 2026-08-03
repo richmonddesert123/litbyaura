@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en" data-currency-symbol="GH₵">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LitByAura — Skincare, delivered. Pay on delivery.</title>
+<meta name="description" content="Dermat-tested skincare delivered across Ghana. Pay cash on delivery, no card required.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="alternate icon" href="/favicon.ico">
+<link rel="apple-touch-icon" href="/images/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Manrope:wght@400;500;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<div class="trust-bar" id="trust-bar">
+  <div class="trust-bar-track" id="trust-bar-track"></div>
+</div>
+
+<header class="site-header">
+  <div class="wrap">
+    <a href="/" class="logo"><img src="/images/logo.png" class="logo-img" alt="LitByAura"></a>
+    <nav class="nav-links">
+      <a href="/#shop">Shop</a>
+      <a href="/#reviews">Reviews</a>
+      <a href="/pages/contact.html">Contact</a>
+    </nav>
+    <div class="header-actions">
+      <a href="/account.html">Account</a>
+      <a href="/cart.html" class="cart-link" aria-label="Cart">
+        🛍️ Cart <span class="cart-count" data-cart-count>0</span>
+      </a>
+    </div>
+  </div>
+</header>
+<nav class="shop-nav" id="shop-nav"></nav>
+
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div class="hero-copy">
+      <p class="eyebrow">New — Aura Glow Serum</p>
+      <h1>Skin, lit<br>from within.</h1>
+      <p class="lede">Formulas tested on real skin, priced for real budgets. Order now, pay when it lands at your door — no card, no risk.</p>
+      <div class="hero-actions">
+        <a href="#shop" class="btn btn-primary">Shop the range</a>
+        <a href="/pages/contact.html" class="btn btn-outline">Talk to us</a>
+      </div>
+    </div>
+    <div class="hero-slideshow" id="hero-slideshow">
+      <div class="hero-slide-caption" id="hero-slide-caption">LitByAura</div>
+      <div class="hero-slide-dots" id="hero-slide-dots"></div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="shop">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <p class="eyebrow" id="shop-preview-eyebrow">The range</p>
+        <h2 class="mt-0" id="shop-preview-heading">Shop the range</h2>
+      </div>
+      <a href="/shop.html?view=all" class="btn btn-outline">View all products →</a>
+    </div>
+    <div class="product-grid" id="product-grid">
+      <p>Loading products…</p>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="reviews" style="background: var(--ink-raised); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);">
+  <div class="wrap">
+    <p class="eyebrow">Reviews</p>
+    <h2>What customers say</h2>
+    <div class="testimonial-grid">
+      <div class="testimonial">
+        <div class="stars">★★★★★</div>
+        <p>The serum absorbed fast and my skin felt brighter within a week. Delivery to Kumasi was quicker than I expected.</p>
+        <div class="testimonial-name">Ama K., Accra</div>
+      </div>
+      <div class="testimonial">
+        <div class="stars">★★★★★</div>
+        <p>Paying on delivery made this an easy first order. The rider called ahead and the product matched the photos exactly.</p>
+        <div class="testimonial-name">Grace O., Kumasi</div>
+      </div>
+      <div class="testimonial">
+        <div class="stars">★★★★★</div>
+        <p>Customer service replied within minutes when I asked about my skin type. Genuinely helpful, not just a sales script.</p>
+        <div class="testimonial-name">Akua S., Tema</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div class="logo logo-sm">Lit<span>ByAura</span></div>
+      <div class="footer-links">
+        <a href="/pages/privacy.html">Privacy Policy</a>
+        <a href="/pages/returns.html">Return &amp; Refund Policy</a>
+        <a href="/pages/shipping.html">Shipping &amp; Delivery</a>
+        <a href="/pages/terms.html">Terms of Use</a>
+      </div>
+    </div>
+    <p class="footer-meta">© 2026 LitByAura. Payments accepted: Cash on Delivery.</p>
+  </div>
+</footer>
+
+<script src="/js/main.js"></script>
+<script>
+const PREVIEW_LIMIT = 8;
+
+async function loadProducts() {
+  const grid = document.getElementById('product-grid');
+  try {
+    let products = await api('/api/products?bestSeller=1');
+    if (products.length > 0) {
+      document.getElementById('shop-preview-eyebrow').textContent = 'Customer favorites';
+      document.getElementById('shop-preview-heading').textContent = 'Best sellers';
+    } else {
+      products = await api('/api/products?newArrivals=1');
+      document.getElementById('shop-preview-eyebrow').textContent = 'Just landed';
+      document.getElementById('shop-preview-heading').textContent = 'New arrivals';
+    }
+    products = products.slice(0, PREVIEW_LIMIT);
+    if (products.length === 0) {
+      grid.innerHTML = '<p>No products yet — check back soon.</p>';
+      return;
+    }
+    grid.innerHTML = products.map(renderCard).join('');
+  } catch (e) {
+    grid.innerHTML = '<p>Could not load products right now.</p>';
+  }
+}
+
+function renderCard(p) {
+  const onSale = p.compare_at_pesewas && p.compare_at_pesewas > p.price_pesewas;
+  const pct = onSale ? Math.round((1 - p.price_pesewas / p.compare_at_pesewas) * 100) : 0;
+  const stockNote = p.stock === 0
+    ? '<span class="out-of-stock">Out of stock</span>'
+    : p.stock <= 5
+      ? `<span class="stock-note low">Only ${p.stock} left</span>`
+      : `<span class="stock-note">In stock</span>`;
+  const cover = (p.images && p.images[0]) || p.image_url;
+  return `
+    <div class="product-card">
+      <a href="/product.html?slug=${encodeURIComponent(p.slug)}" class="product-media">
+        ${onSale ? `<span class="badge-sale">${pct}% OFF</span>` : ''}
+        ${p.isBestSeller ? `<span class="badge-bestseller" style="left:auto; right:12px; top:12px; position:absolute;">★ Best seller</span>` : ''}
+        <img src="${cover}" alt="${p.name}">
+      </a>
+      <div class="product-body">
+        <a href="/product.html?slug=${encodeURIComponent(p.slug)}"><h3 class="product-name">${p.name}</h3></a>
+        ${p.brand ? `<div class="taxo-badges"><span class="taxo-badge brand">${p.brand}</span></div>` : ''}
+        <p class="product-desc">${p.description}</p>
+        <div class="price-row">
+          <span class="price-now">${formatMoney(p.price_pesewas)}</span>
+          ${onSale ? `<span class="price-was">${formatMoney(p.compare_at_pesewas)}</span>` : ''}
+        </div>
+        ${stockNote}
+        <div style="display:flex; gap:8px; margin-top:6px;">
+          <button class="btn btn-outline" style="flex:1;" onclick="addToCart(${p.id});toast('Added to cart');" ${p.stock === 0 ? 'disabled' : ''}>Add to cart</button>
+          <a class="btn btn-primary" style="flex:1;" href="/checkout.html?buyNow=${p.id}&qty=1">Order now</a>
+        </div>
+      </div>
+    </div>`;
+}
+
+/**
+ * Trust-bar marquee: fetches admin-editable messages and duplicates them
+ * once so the CSS animation (translateX -50%) loops seamlessly with no
+ * visible jump. If there are zero messages, the bar just stays empty
+ * rather than showing a broken/blank scroll.
+ */
+async function initTrustBar() {
+  const track = document.getElementById('trust-bar-track');
+  if (!track) return;
+  try {
+    const messages = await api('/api/announcements');
+    if (messages.length === 0) { document.getElementById('trust-bar').style.display = 'none'; return; }
+    const itemsHtml = messages.map((m) => `<span>${m.text}</span>`).join('');
+    track.innerHTML = itemsHtml + itemsHtml; // duplicated for the seamless loop
+  } catch {
+    document.getElementById('trust-bar').style.display = 'none';
+  }
+}
+initTrustBar();
+
+loadProducts();
+renderShopNav();
+
+/**
+ * Hero slideshow: fetches admin-managed slides (any number, not capped),
+ * auto-advances every 4.5s, pauses on hover, dots are clickable. Respects
+ * prefers-reduced-motion by not auto-advancing. Slide images/order are
+ * fully editable at /admin → Settings → Hero slideshow - no code changes
+ * needed to add, remove, reorder, or swap photos.
+ */
+(function initHeroSlideshow() {
+  const root = document.getElementById('hero-slideshow');
+  if (!root) return;
+
+  api('/api/hero-slides').then((slidesData) => {
+    if (!slidesData.length) { root.style.display = 'none'; return; }
+
+    const dotsEl = document.getElementById('hero-slide-dots');
+    const captionEl = document.getElementById('hero-slide-caption');
+    slidesData.forEach((s, i) => {
+      const slideEl = document.createElement('div');
+      slideEl.className = `hero-slide${i === 0 ? ' active' : ''}`;
+      slideEl.innerHTML = `<img src="${s.image_url}" alt="${s.caption || 'LitByAura'}">`;
+      root.insertBefore(slideEl, captionEl);
+    });
+    if (slidesData[0].caption) captionEl.textContent = slidesData[0].caption;
+
+    const slides = Array.from(root.querySelectorAll('.hero-slide'));
+    let index = 0;
+    let timer = null;
+
+    dotsEl.innerHTML = slides.map((_, i) => `<button aria-label="Go to slide ${i + 1}" class="${i === 0 ? 'active' : ''}"></button>`).join('');
+    const dots = Array.from(dotsEl.querySelectorAll('button'));
+
+    function show(i) {
+      index = (i + slides.length) % slides.length;
+      slides.forEach((s, n) => s.classList.toggle('active', n === index));
+      dots.forEach((d, n) => d.classList.toggle('active', n === index));
+      if (captionEl && slidesData[index] && slidesData[index].caption) captionEl.textContent = slidesData[index].caption;
+    }
+
+    function next() { show(index + 1); }
+    function start() {
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || slides.length < 2) return;
+      stop();
+      timer = setInterval(next, 4500);
+    }
+    function stop() { if (timer) clearInterval(timer); }
+
+    dots.forEach((dot, i) => dot.addEventListener('click', () => { show(i); start(); }));
+    root.addEventListener('mouseenter', stop);
+    root.addEventListener('mouseleave', start);
+
+    start();
+  }).catch(() => { root.style.display = 'none'; });
+})();
+</script>
+</body>
+</html>
